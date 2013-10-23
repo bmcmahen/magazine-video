@@ -1,0 +1,20 @@
+{
+  "name": "magazine-video",
+  "repo": "bmcmahen/magazine-video",
+  "description": "easily enable background-video playback, popup-video in magazine.js",
+  "version": "0.0.1",
+  "keywords": [],
+  "dependencies": {
+    "component/each": "*",
+    "component/events": "*",
+    "eugenicsarchivesca/background-video": "*",
+    "bmcmahen/popup-video": "*"
+  },
+  "development": {},
+  "license": "MIT",
+  "main": "index.js",
+  "scripts": [
+    "index.js"
+  ],
+  "remotes": []
+}

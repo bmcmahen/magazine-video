@@ -1,0 +1,15 @@
+  .hide-while-playing {
+    display: block;
+  }
+
+  .video-playing .hide-while-playing {
+    display: none;
+  }
+
+  .show-while-playing {
+    display: none;
+  }
+
+  .video-playing .show-while-playing {
+    display: block;
+  }

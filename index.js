@@ -16,6 +16,8 @@ function VideoPlayback(pane){
 
   this.paneEvents = events(pane, this);
   this.paneEvents.bind('close');
+  this.paneEvents.bind('active');
+  this.paneEvents.bind('inactive');
 
   this.events = events(this.el, this);
   this.events.bind('click [data-start-video]', 'playVideoURL');
@@ -27,7 +29,16 @@ function VideoPlayback(pane){
 VideoPlayback.prototype.onclose = function(){
   this.events.unbind();
   this.docEvents.unbind();
-}
+};
+
+VideoPlayback.prototype.onactive = function(){
+  if (this.video && this.el.getAttribute('data-autoplay'))
+    this.video.play();
+};
+
+VideoPlayback.prototype.oninactive = function(){
+  if (this.video) this.video.pause();
+};
 
 VideoPlayback.prototype.autoplay = function(){
   // 1. Video that automatically plays in the background.

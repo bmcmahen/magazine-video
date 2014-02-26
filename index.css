@@ -13,3 +13,11 @@
   .video-playing .show-while-playing {
     display: block;
   }
+
+  .video-playing.video-nohide .hide-while-playing {
+    display: block;
+  }
+
+  .video-playing.video-nohide .show-while-playing {
+  display: none;
+}

@@ -1,7 +1,20 @@
+/**
+ * Module Dependencies
+ */
+
 var each = require('each');
 var events = require('events');
-var BackgroundVideo = require('background-video');
+var BackgroundVideo = require('bg-video');
 var PopupVideo = require('popup-video');
+var classes = require('classes');
+var Youtube = require('youtube');
+
+/**
+ * Plugin API
+ * 
+ * @param  {Magazine} magazine 
+ * @param  {Object} options  
+ */
 
 module.exports = function(magazine, options){
   options = options || {};
@@ -9,6 +22,13 @@ module.exports = function(magazine, options){
     new VideoPlayback(pane);
   });
 }
+
+
+/**
+ * Video Playback Constructor
+ * 
+ * @param {Pane} pane 
+ */
 
 function VideoPlayback(pane){
   this.pane = pane;
@@ -20,7 +40,8 @@ function VideoPlayback(pane){
   this.paneEvents.bind('inactive');
 
   this.events = events(this.el, this);
-  this.events.bind('click [data-start-video]', 'playVideoURL');
+  this.events.bind('click [data-play-video]', 'playVideoURL');
+  this.events.bind('click [data-play-youtube]', 'playYouTube');
   this.events.bind('click [data-toggle-playback]', 'togglePlayback');
 
   this.autoplay();
@@ -32,6 +53,7 @@ VideoPlayback.prototype.onclose = function(){
 };
 
 VideoPlayback.prototype.onactive = function(){
+  if (!this.autoplay) return;
   if (this.video && this.el.getAttribute('data-autoplay'))
     this.video.play();
 };
@@ -48,22 +70,35 @@ VideoPlayback.prototype.autoplay = function(){
     : this.el.querySelector('[data-background-video]');
 
   if (el) {
+    this.autoplay = true;
     url = el.getAttribute('data-background-video');
     this.playVideo(el, el, url);
   }
 };
 
+
+
 VideoPlayback.prototype.playVideo = function(target, wrapper, url){
-  if (this.video) this.video.close();
-  this.video = new BackgroundVideo(wrapper, url);
-  if (target.getAttribute('data-video-loop')){
-    this.video.loop();
+  // this isn't very good. it assumes that we only have one video
+  // container per page, and that the video will be of the same
+  // type... needs a rewrite.
+
+  this.noHide = target.getAttribute('data-no-hide');
+
+  if (this.video) {
+    this.video.src(url);
+    this.video.play();
+  } else {
+    this.video = new BackgroundVideo(wrapper, url);
+    target.getAttribute('data-video-loop') && this.video.loop();
+    this.video.append();
   }
-  this.video.append();
+
 
   // create a popup video?
   var popupVideo = target.getAttribute('data-popup-video');
-  if (popupVideo) createPopupVideo.call(this, popupVideo);
+  if (popupVideo) this.createPopupVideo(popupVideo);
+  else if (this.popup) this.popup.remove();
 
   // bind resize events & video events
   if (!this.docEvents) {
@@ -81,10 +116,19 @@ VideoPlayback.prototype.playVideo = function(target, wrapper, url){
   this.videoEvents.bind('stop', 'onpause');
 };
 
+VideoPlayback.prototype.playYouTube = function(target, wrapper, url){
+  this.youtube = new Youtube(url, wrapper);
+  var popup = target.getAttribute('data-popup-video');
+  if (popup) {
+    this.createPopupVideo(popup);
+  } else if (this.popup) {
+    this.popup.remove();
+  }
+};
+
 // Should popups be in the dom? this will be sloooow...
 VideoPlayback.prototype.createPopupVideo = function(popupVideo){
-  if (this.popup) this.popup.remove();
-  var list = document.querySelector(popupVideo).childNodes;
+  var list = document.querySelector(popupVideo).children;
   var json = {};
   each(list, function(item){
     var time = item.getAttribute('data-start-time');
@@ -95,24 +139,40 @@ VideoPlayback.prototype.createPopupVideo = function(popupVideo){
       html: content
     };
   });
-  this.popup = new PopupVideo(this.video.video, json);
+  this.popup = new PopupVideo(this.video.video, json).pauseOnHover();
 }
 
 VideoPlayback.prototype.playVideoURL = function(e){
   e.preventDefault();
   var target = e.target;
-  var url = target.getAttribute('data-start-video');
+  var url = target.getAttribute('data-play-video');
   var wrapper = target.getAttribute('data-video-wrapper');
   var el = document.querySelector(wrapper);
-  playVideo.call(this, target, el, url);
+  this.autoplay = false;
+  this.playVideo(target, el, url);
 };
+
+VideoPlayback.prototype.playYouTube = function(e){
+  e.preventDefault();
+  var target = e.target;
+  var url = target.getAttribute('data-play-youtube');
+  var wrapper = target.getAttribute('data-video-wrapper');
+  var el = document.querySelector(wrapper);
+  this.autoplay = false;
+  this.playYouTube(target, el, url);
+};
+
+
 
 VideoPlayback.prototype.onpause = function(){
   classes(this.el).remove('video-playing');
+  classes(this.el).remove('video-nohide');
   this.video.isPlaying = false;
 };
 
 VideoPlayback.prototype.onplay = function(){
+  if (this.noHide) { classes(this.el).add('video-nohide'); }
+  else { classes(this.el).remove('video-nohide'); }
   classes(this.el).add('video-playing');
   this.video.isPlaying = true;
 };
@@ -124,9 +184,9 @@ VideoPlayback.prototype.resizeVideo = function(){
 VideoPlayback.prototype.togglePlayback = function(e){
   if (e) e.preventDefault();
   if (this.video.isPlaying) {
-    this.pauseVideo();
+    this.video.pause();
   } else {
-    this.playVideo();
+    this.video.play();
   }
 };
 

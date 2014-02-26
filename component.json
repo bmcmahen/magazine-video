@@ -7,8 +7,10 @@
   "dependencies": {
     "component/each": "*",
     "component/events": "*",
-    "eugenicsarchivesca/background-video": "*",
-    "bmcmahen/popup-video": "*"
+    "bmcmahen/bg-video": "*",
+    "bmcmahen/popup-video": "*",
+    "component/classes": "*",
+    "bmcmahen/youtube": "*"
   },
   "development": {},
   "license": "MIT",
